@@ -17,3 +17,6 @@ logs/*
 # Gradio cache and personal Claude Code settings
 .gradio/
 .claude/
+
+# Local Claude Code project instructions
+CLAUDE.md

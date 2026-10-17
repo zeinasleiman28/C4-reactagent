@@ -83,21 +83,24 @@ The tool descriptions (`tools.MCP_TOOL_DEFINITIONS`) are rendered into the syste
 ## Experiments
 
 Five fixed test questions (fact lookup, price estimate, lead with contact info, out of scope, missing info) are run
-through both personas under four experiments:
+through both personas under seven experiments:
 
 1. with vs. without Chain-of-Thought
 2. few-shot vs. zero-shot (worked example kept / dropped)
 3. instructions in the system prompt vs. in the user message
 4. low (0.1) vs. high (1.0) temperature
-5. model type: one extra run of the price question with Layla's config on a second Gemini model
+5. model type: the five questions with Layla's config on a second Gemini model
+6. max_tokens 150 vs 800
+7. top_p 0.5 vs 1.0
 
 Every run is logged to [`logs/experiments.csv`](logs/experiments.csv) (persona, experiment, setup, config, question,
 tools used, steps, correct tool use Y/N, hallucination Y/N, answer, notes) and compared in a pandas table.
 
 ### Results
 
-81 runs, 80 on the free `gemini-3.5-flash-lite` plus one model-type run (5 questions × 2 personas per setup; per setup: correct tool use /
-hallucinations / complete answers, out of 10, and average LLM calls):
+121 runs, 116 on the free `gemini-3.5-flash-lite` plus 5 model-type runs on `gemini-3.1-flash-lite` (5 questions × 2 personas per setup;
+per setup: correct tool use / hallucinations / complete answers, out of 10, and average LLM calls). The daily quota ran out at run 117 of 120,
+so 4 of Dr. Karam's top_p 1.0 runs are missing; the resumable runner adds them on the next run.
 
 | Experiment | Setup A | Setup B | Best setup | Key observation |
 |---|---|---|---|---|
@@ -105,17 +108,19 @@ hallucinations / complete answers, out of 10, and average LLM calls):
 | 2. Shots | few-shot: 10 / 0 / 9, 1.8 steps | zero-shot: 10 / 0 / 9, 1.9 steps | tie | The worked example made no measurable difference |
 | 3. Instruction placement | system prompt: 10 / 0 / 9, 1.8 steps | user message: 10 / 0 / 10, 2.0 steps | tie | One run apart; the system prompt used slightly fewer steps |
 | 4. Sampling config | temperature 0.1: 10 / 0 / 10, 1.8 steps | temperature 1.0: 10 / 0 / 10, 1.8 steps | tie | Temperature made no measurable difference on these questions |
-| 5. Model type | `gemini-3.5-flash-lite`, Layla, price question: 1 / 0 / 1, 2 steps | `gemini-3.1-flash-lite`, same config and question: 1 / 0 / 1, 2 steps | tie | Same tool call, same 480 USD total; the older model only wrote a longer answer with an extra caveat |
+| 5. Model type | `gemini-3.5-flash-lite`, Layla, 5 questions: 5 / 0 / 4, 1.8 steps | `gemini-3.1-flash-lite`, same config: 4 / 0 / 3, 1.6 steps | newer model | The older model skipped `record_customer_interest` on the lead question and asked for the budget instead of the email |
+| 6. Max tokens | 150: 10 / 1 / 7, 1.9 steps | 800: 10 / 0 / 10, 1.8 steps | 800 | Dr. Karam's list-style answers were cut off mid-sentence at 150 tokens (2 of 5 complete); Layla's short replies still fit (5 of 5). The one "hallucination" is a scorer false positive on a correct "out of scope" refusal |
+| 7. Top-p | 0.5: 10 / 0 / 10, 1.8 steps | 1.0: 6 / 0 / 6, 1.8 steps (4 runs missing, quota) | tie | No measurable difference on the runs that completed |
 
-- **Personas:** both used the correct tools in every run; complete answers 98% for Dr. Karam, 93% for Layla.
-- **Weakest case:** the missing-info question (no email given) was answered fully in 75% of runs; in 4 runs the agent
+- **Personas:** correct tool use 100% for Dr. Karam and 98% for Layla; complete answers 93% and 92%. Dr. Karam's only failures came with max_tokens 150.
+- **Weakest case:** the missing-info question (no email given) was answered fully in 75% of runs; the agent often
   asked for the NGO's budget instead of the email.
 - **Instructions block:** for the same price question, both personas used `search_business_info` without it and
   `estimate_campaign_package` with it (notebook sections 8–9).
 - Gemini's endpoint rejected `top_k`, `frequency_penalty`, `presence_penalty` and `thinking_budget`, so the personas
   differed in practice by prompt, temperature, top_p and max_tokens.
 - Hallucination here is an automatic check (figures not in the documents or tool results, or a missing refusal);
-  it found none. With 5 runs per persona and setup, these are indications rather than proof.
+  it flagged one run, a false positive on a correct refusal. With 5 runs per persona and setup, these are indications rather than proof.
 
 Full log: [`logs/experiments.csv`](logs/experiments.csv). Reflection: notebook section 11.
 
@@ -145,7 +150,7 @@ Open `c4_react_agent.ipynb`, select the `venv` kernel and run all cells.
 | Section | What happens |
 |---|---|
 | 6–9 | ReAct runs with printed Thought / Action / Observation, the four tools, the two personas, the Instructions block |
-| 10 | `run_all_experiments()` – about 60 model runs; use `run_all_experiments(delay_s=6)` on a rate-limited free tier |
+| 10 | `run_all_experiments()` – about 100 model runs; use `run_all_experiments(delay_s=6)` on a rate-limited free tier |
 | 11 | Reflection, with helper cells that print the numbers from `logs/experiments.csv` |
 | 12 | Gradio chat with a persona dropdown and an optional reasoning trace (`demo.launch()`) |
 
