@@ -1,0 +1,9 @@
+openai
+langgraph
+python-dotenv
+pypdf
+pandas
+gradio==6.30.0
+reportlab
+pytest
+ipykernel
