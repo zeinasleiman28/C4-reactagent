@@ -109,7 +109,7 @@ Then put your key in `.env` (never committed):
 ```ini
 LLM_PROVIDER=gemini              # or: openai
 GEMINI_API_KEY=...               # or OPENAI_API_KEY=...
-# LLM_MODEL=                     # optional: default gemini-2.5-flash / gpt-4o-mini
+# LLM_MODEL=                     # optional: default gemini-3.5-flash-lite / gpt-4o-mini
 ```
 
 ## Run
