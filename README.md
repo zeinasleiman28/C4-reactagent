@@ -10,6 +10,17 @@ and logged **experiments** comparing prompting strategies.
 
 Main deliverable: **[`c4_react_agent.ipynb`](c4_react_agent.ipynb)**, readable top to bottom.
 
+## Use case
+
+- **Agent goal:** answer questions about Bridgeway's services, process, team, hours and prices from the business documents; quote a campaign package with the one applicable discount; record leads and feedback; and point interested NGOs to the free 30-minute discovery call.
+- **Target audience:** staff and volunteers of Lebanese NGOs who want to reach donors, partners or volunteers, plus visitors with general questions about Bridgeway. Users may write in English, Arabic or French.
+- **Tools:**
+  - `search_business_info(query)` - keyword search over the business documents.
+  - `record_customer_interest(email, name, message)` - saves a lead when a person leaves a name and email.
+  - `record_feedback(question)` - saves unknown or out-of-scope requests, praise and complaints.
+  - `estimate_campaign_package(ngo_size, goal)` - prices a package from `business_data.py` with the single applicable discount.
+- **Constraints and limitations:** every fact and price must come from a tool result, never from memory; the agent never promises how much money a campaign will raise; it declines what Bridgeway does not do (full grant proposals, buying or selling email lists, paid ads, handling or collecting donation money, outreach for political parties or for-profit companies); discounts never stack; one Action per turn and at most 6 LLM calls per question; the free Gemini tier limits requests per minute and per day, and its OpenAI-compatible endpoint rejects `top_k` and the penalty settings.
+
 ## How the manual ReAct loop works
 
 ReAct = **Thought → Action → Observation → … → Final Answer**. No `AgentExecutor`, no `create_react_agent`,
@@ -78,13 +89,14 @@ through both personas under four experiments:
 2. few-shot vs. zero-shot (worked example kept / dropped)
 3. instructions in the system prompt vs. in the user message
 4. low (0.1) vs. high (1.0) temperature
+5. model type: one extra run of the price question with Layla's config on a second Gemini model
 
 Every run is logged to [`logs/experiments.csv`](logs/experiments.csv) (persona, experiment, setup, config, question,
 tools used, steps, correct tool use Y/N, hallucination Y/N, answer, notes) and compared in a pandas table.
 
 ### Results
 
-80 runs on the free `gemini-3.5-flash-lite` (5 questions × 2 personas per setup; per setup: correct tool use /
+81 runs, 80 on the free `gemini-3.5-flash-lite` plus one model-type run (5 questions × 2 personas per setup; per setup: correct tool use /
 hallucinations / complete answers, out of 10, and average LLM calls):
 
 | Experiment | Setup A | Setup B | Best setup | Key observation |
@@ -93,8 +105,9 @@ hallucinations / complete answers, out of 10, and average LLM calls):
 | 2. Shots | few-shot: 10 / 0 / 9, 1.8 steps | zero-shot: 10 / 0 / 9, 1.9 steps | tie | The worked example made no measurable difference |
 | 3. Instruction placement | system prompt: 10 / 0 / 9, 1.8 steps | user message: 10 / 0 / 10, 2.0 steps | tie | One run apart; the system prompt used slightly fewer steps |
 | 4. Sampling config | temperature 0.1: 10 / 0 / 10, 1.8 steps | temperature 1.0: 10 / 0 / 10, 1.8 steps | tie | Temperature made no measurable difference on these questions |
+| 5. Model type | `gemini-3.5-flash-lite`, Layla, price question: 1 / 0 / 1, 2 steps | `gemini-3.1-flash-lite`, same config and question: 1 / 0 / 1, 2 steps | tie | Same tool call, same 480 USD total; the older model only wrote a longer answer with an extra caveat |
 
-- **Personas:** both used the correct tools in all 40 runs; complete answers 98% for Dr. Karam, 92% for Layla.
+- **Personas:** both used the correct tools in every run; complete answers 98% for Dr. Karam, 93% for Layla.
 - **Weakest case:** the missing-info question (no email given) was answered fully in 75% of runs; in 4 runs the agent
   asked for the NGO's budget instead of the email.
 - **Instructions block:** for the same price question, both personas used `search_business_info` without it and
@@ -149,7 +162,3 @@ Open `c4_react_agent.ipynb`, select the `venv` kernel and run all cells.
 | `me/business_summary.txt`, `me/about_business.pdf` | The business in two formats (PDF built by `make_pdf.py`) |
 | `logs/experiments.csv` | Experiment results |
 | `business_agent.ipynb`, `app.py`, `agent.py`, `router.py`, `reflection.py`, `tests/` | The C3 assistant this project builds on (kept for reference; `py -m pytest` runs its tests) |
-
-## Credits
-
-Built with assistance from Claude Code.
