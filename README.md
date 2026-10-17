@@ -84,14 +84,27 @@ tools used, steps, correct tool use Y/N, hallucination Y/N, answer, notes) and c
 
 ### Results
 
-_To be filled in after running the experiments with the real model._
+80 runs on the free `gemini-3.5-flash-lite` (5 questions × 2 personas per setup; per setup: correct tool use /
+hallucinations / complete answers, out of 10, and average LLM calls):
 
-| Experiment | Best setup | Key observation |
-|---|---|---|
-| 1. Chain-of-Thought | | |
-| 2. Shots | | |
-| 3. Instruction placement | | |
-| 4. Sampling config | | |
+| Experiment | Setup A | Setup B | Best setup | Key observation |
+|---|---|---|---|---|
+| 1. Chain-of-Thought | with CoT: 10 / 0 / 9, 1.8 steps | without CoT: 10 / 0 / 10, 2.5 steps | mixed: with CoT used fewer steps (1.8 vs 2.5), without CoT had one more complete answer | Same tool use; without the Thought line the agent needed more steps and 2 of the 3 tool errors happened there |
+| 2. Shots | few-shot: 10 / 0 / 9, 1.8 steps | zero-shot: 10 / 0 / 9, 1.9 steps | tie | The worked example made no measurable difference |
+| 3. Instruction placement | system prompt: 10 / 0 / 9, 1.8 steps | user message: 10 / 0 / 10, 2.0 steps | tie | One run apart; the system prompt used slightly fewer steps |
+| 4. Sampling config | temperature 0.1: 10 / 0 / 10, 1.8 steps | temperature 1.0: 10 / 0 / 10, 1.8 steps | tie | Temperature made no measurable difference on these questions |
+
+- **Personas:** both used the correct tools in all 40 runs; complete answers 98% for Dr. Karam, 92% for Layla.
+- **Weakest case:** the missing-info question (no email given) was answered fully in 75% of runs; in 4 runs the agent
+  asked for the NGO's budget instead of the email.
+- **Instructions block:** for the same price question, both personas used `search_business_info` without it and
+  `estimate_campaign_package` with it (notebook sections 8–9).
+- Gemini's endpoint rejected `top_k`, `frequency_penalty`, `presence_penalty` and `thinking_budget`, so the personas
+  differed in practice by prompt, temperature, top_p and max_tokens.
+- Hallucination here is an automatic check (figures not in the documents or tool results, or a missing refusal);
+  it found none. With 5 runs per persona and setup, these are indications rather than proof.
+
+Full log: [`logs/experiments.csv`](logs/experiments.csv). Reflection: notebook section 11.
 
 ## Setup
 
