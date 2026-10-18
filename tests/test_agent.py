@@ -9,7 +9,6 @@ and no internet. Run them from the project folder with:
 
 import json
 import re
-from pathlib import Path
 
 import httpx
 import openai
@@ -22,8 +21,6 @@ import tools
 from business_data import DISCOUNTS, PRICES, best_discount_percent, discounted_price
 from fake_llm import FakeLLM, tool_call
 from reflection import make_reflector
-
-ROOT = Path(__file__).resolve().parent.parent
 
 
 def read_jsonl(path):
@@ -315,24 +312,6 @@ def test_reflection(temp_logs, review, expected_status, uses_revision):
     assert entry["status"] == expected_status and entry["draft"] == draft and entry["final"] == result["reply"]
 
 
-# ---------------------------------------------------------------------------
-# Notebook deliverable
-# ---------------------------------------------------------------------------
-
-def notebook_cells():
-    nb = json.loads((ROOT / "business_agent.ipynb").read_text(encoding="utf-8"))
-    return ["".join(c["source"]) for c in nb["cells"]]
-
-
-def test_notebook_has_labeled_persona_and_instructions_blocks():
-    cells = notebook_cells()
-    persona_i = next(i for i, c in enumerate(cells) if c.startswith("## 🤝 Persona"))
-    instructions_i = next(i for i, c in enumerate(cells) if c.startswith("## 📋 Instructions"))
-    assert "PERSONA = " in cells[persona_i + 1]
-    assert "INSTRUCTIONS = " in cells[instructions_i + 1]
-    assert persona_i < instructions_i
-
-
 def test_instructions_cover_the_required_rules():
     import app
     text = app.INSTRUCTIONS
@@ -345,25 +324,6 @@ def test_instructions_cover_the_required_rules():
 # ---------------------------------------------------------------------------
 # app.py (standalone app / Hugging Face Space)
 # ---------------------------------------------------------------------------
-
-def string_constants(source):
-    """Top-level NAME = "string" assignments in some Python source."""
-    import ast
-    return {
-        node.targets[0].id: node.value.value
-        for node in ast.parse(source).body
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
-    }
-
-
-def test_app_persona_and_instructions_match_notebook():
-    notebook = {}
-    for cell in notebook_cells():
-        notebook.update(string_constants(cell) if cell.lstrip().startswith(("# PERSONA", "# INSTRUCTIONS")) else {})
-    app = string_constants((ROOT / "app.py").read_text(encoding="utf-8"))
-    assert app["PERSONA"] == notebook["PERSONA"]
-    assert app["INSTRUCTIONS"] == notebook["INSTRUCTIONS"]
-
 
 def test_app_chat_uses_the_agent(monkeypatch):
     import app

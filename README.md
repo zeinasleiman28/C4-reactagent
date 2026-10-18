@@ -166,4 +166,4 @@ Open `c4_react_agent.ipynb`, select the `venv` kernel and run all cells.
 | `log_utils.py` | Shared JSONL logging helpers |
 | `me/business_summary.txt`, `me/about_business.pdf` | The business in two formats (PDF built by `make_pdf.py`) |
 | `logs/experiments.csv` | Experiment results |
-| `business_agent.ipynb`, `app.py`, `agent.py`, `router.py`, `reflection.py`, `tests/` | The C3 assistant this project builds on (kept for reference; `py -m pytest` runs its tests) |
+| `app.py`, `agent.py`, `router.py`, `reflection.py`, `tests/` | The C3 assistant this project builds on (kept for reference; `py -m pytest` runs its tests) |

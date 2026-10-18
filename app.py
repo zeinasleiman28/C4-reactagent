@@ -1,7 +1,7 @@
 """
 app.py
 ------
-Standalone version of business_agent.ipynb: Rima, Bridgeway's outreach advisor, as a Gradio chat app.
+Standalone version of the C3 assistant: Rima, Bridgeway's outreach advisor, as a Gradio chat app.
 
 Run locally:            py app.py        (then open http://127.0.0.1:7860)
 On Hugging Face Spaces: this is the Space's app_file; set the API key as a Space secret.
